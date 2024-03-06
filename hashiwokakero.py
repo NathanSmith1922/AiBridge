@@ -24,9 +24,8 @@ class Island:
 
 
 def create_islands():
-    for row in range(matrix.size):
-        for col in range(matrix[row].size):
-
+    for row in range(matrix.shape[0]):
+        for col in range(matrix[row].shape[0]):
             if matrix[row][col] == ".":
                 continue
             value = int(matrix[row][col], 16)
@@ -52,5 +51,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
