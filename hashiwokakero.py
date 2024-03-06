@@ -34,7 +34,7 @@ class Island:
         self.coordinate = coordinate
         self.size = size
 
-    # DRAFT FUNCTIONS
+    # DRAFT FUNCTIONS FOR GETTING ADJACENCIES
     def top(self):
         for i in range(self.coordinate.row, 0, -1):
             node = matrix[i][self.coordinate.col]
@@ -64,18 +64,23 @@ class Island:
         return Coordinate(None, None)
 
 
-def test_check_adjacencies():
+def getBridgeSize(domain):
+    return int(max(0, ((domain - 10) / 2)))
+
+# TESTING FUNCTIONS
+# island = Island(Coordinate(row, col), matrix[row][col])
+
+def print_matrix():
     for row in range(rowSize):
         for col in range(colSize):
-            island = Island(Coordinate(row, col), matrix[row][col])
             print(MATRIX_CODE[matrix[row][col]],end="")
         print()
 
-
-
 def main():
-    test_check_adjacencies()
-    
+    print_matrix()
+
+    for i in range(18):
+        print(getBridgeSize(i))
 
 if __name__ == "__main__":
     main()
