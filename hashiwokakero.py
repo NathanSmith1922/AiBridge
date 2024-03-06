@@ -1,53 +1,86 @@
 import numpy
 
 # This is an example of what the scan_print_map file returns after execution.
-matrix = numpy.array([
-    [".", "4", ".", "9", ".", ".", "8", ".", ".", "6"],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],   
-    [".", "5", ".", "9", ".", ".", "9", ".", "4", "."],   
-    [".", ".", ".", ".", ".", "2", ".", ".", ".", "."],
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],   
-    [".", "5", ".", "8", ".", "5", ".", ".", "1", "."],   
-    [".", ".", "3", ".", ".", ".", "7", ".", ".", "7"],   
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."],   
-    [".", "1", ".", ".", ".", "1", ".", ".", ".", "4"],   
-    [".", ".", ".", ".", ".", ".", ".", ".", ".", "."]
-])
+
+rowSize = 10
+colSize = 10
+
+matrix = numpy.array(
+    [
+        [0, 4, 0, 9, 0, 0, 8, 0, 0, 6],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 5, 0, 9, 0, 0, 9, 0, 4, 0],
+        [0, 0, 0, 0, 0, 2, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 5, 0, 8, 0, 5, 0, 0, 1, 0],
+        [0, 0, 3, 0, 0, 0, 7, 0, 0, 7],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        [0, 1, 0, 0, 0, 1, 0, 0, 0, 4],
+        [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+    ]
+)
+
+
+class Coordinate:
+    def __init__(self, row, col):
+        self.row = row
+        self.col = col
+
 
 class Island:
-    def __init__(self, size, top, down, left, right):
+    def __init__(self, coordinate, size):
+        self.coordinate = coordinate
         self.size = size
-        self.top = top
-        self.down = down
-        self.left = left
-        self.right = right
+
+    def top(self):
+        for i in range(self.coordinate.row, 0, -1):
+            if i != self.coordinate.row and matrix[i][self.coordinate.col] > 0:
+                return Coordinate(i, self.coordinate.col)
+        return Coordinate(None, None)
+
+    def down(self):
+        for i in range(self.coordinate.row, rowSize):
+            if i != self.coordinate.row and matrix[i][self.coordinate.col] > 0:
+                return Coordinate(i, self.coordinate.col)
+        return Coordinate(None, None)
+
+    def left(self):
+        for i in range(self.coordinate.col, 0, -1):
+            if i != self.coordinate.col and matrix[self.coordinate.row][i] > 0:
+                return Coordinate(self.coordinate.row, i)
+        return Coordinate(None, None)
+
+    def right(self):
+        for i in range(self.coordinate.col, colSize):
+            if i != self.coordinate.col and matrix[self.coordinate.row][i] > 0:
+                return Coordinate(self.coordinate.row, i)
+        return Coordinate(None, None)
 
 
-def create_islands():
-    for row in range(matrix.shape[0]):
-        for col in range(matrix[row].shape[0]):
-            if matrix[row][col] == ".":
+def test_check_adjacencies():
+    for row in range(rowSize):
+        for col in range(colSize):
+            if matrix[row][col] == 0:
                 continue
-            value = int(matrix[row][col], 16)
-            if value > 0 and value < 13:
-                matrix[row][col] = Island(matrix[row][col], 0, 0, 0, 0)
+            island = Island(Coordinate(row, col), matrix[row][col])
 
-def get_adjacent_islands():
-    # Four loops stop when you hit the first thing.
-    return
-
-def simplify():
-    # 
-    return
-
-def DFS():
-    # Brute-Force
-    return
+            print(
+                "CHECKING NODE: "
+                + str(island.coordinate.row)
+                + ", "
+                + str(island.coordinate.col)
+            )
+            print("\tTOP: " + str(island.top().row) + ", " + str(island.top().col))
+            print("\tDOWN: " + str(island.down().row) + ", " + str(island.down().col))
+            print("\tLEFT: " + str(island.left().row) + ", " + str(island.left().col))
+            print("\tRIGHT: " + str(island.right().row) + ", " + str(island.right().col))
+            print()
 
 
 def main():
-    create_islands()
+    test_check_adjacencies()
     print(matrix)
+
 
 if __name__ == "__main__":
     main()
