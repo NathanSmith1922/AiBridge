@@ -159,9 +159,10 @@ def create_bridge(start, map, n_row, n_col, direction, length):
         col = start.col if (direction == TOP or direction == DOWN) else i
 
         if (row == start.row and col == start.col): continue
+
         cell = copy[row][col]
 
-        if (cell > 0): break
+        if (cell > 0 and cell <= 12): break
         copy[row][col] = max(cell, 12 + length * 2 - (0 if (direction == TOP or direction == DOWN) else 1))
     
     return copy
