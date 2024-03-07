@@ -32,12 +32,15 @@ map = numpy.array(
     ]
 )
 
+
 class Cell:
     def __init__(self, row, col) -> None:
         self.row = row
         self.col = col
 
+
 ###########################################################################################
+
 
 class Island:
     def __init__(self, n_row, n_col, cell, domain) -> None:
@@ -100,7 +103,9 @@ class Island:
     def get_adjacent_count(self, map) -> int:
         return 4 - self.get_adjacent_paths(map).count(None)
 
+
 ###########################################################################################
+
 
 def initialise_islands(n_row, n_col):
     islands = []
@@ -119,62 +124,77 @@ def simplify(map, n_row, n_col, islands):
 
             direction = 0
             for connections in island.get_adjacent_paths(copy):
-                if (connections != None):
-                    copy = create_bridge(island.cell, copy, n_row, n_col, direction, island.domain)
+                if connections != None:
+                    copy = create_bridge(
+                        island.cell, copy, n_row, n_col, direction, island.domain
+                    )
                 direction += 1
 
         elif (
-            island.domain % 3 == 0 and island.get_adjacent_count(copy) == island.domain / 3
+            island.domain % 3 == 0
+            and island.get_adjacent_count(copy) == island.domain / 3
         ):
             direction = 0
             for connections in island.get_adjacent_paths(copy):
-                if (connections != None):
+                if connections != None:
                     copy = create_bridge(island.cell, copy, n_row, n_col, direction, 3)
                 direction += 1
 
         elif island.get_adjacent_count(copy) == int(island.domain / 3 + 1):
-            
+
             direction = 0
             for connections in island.get_adjacent_paths(copy):
-                if (connections != None):
+                if connections != None:
                     copy = create_bridge(island.cell, copy, n_row, n_col, direction, 1)
                 direction += 1
     return copy
+
 
 ###########################################################################################
 # DRAFT FUNCTION PLEASE DON'T JUDGE THIS IS LITERALLY THE FUCKING WORST CODE
 # I DIDN'T WANT TO DO FOUR FUCKING FOR LOOPS SO I MADE A REALLY LONG FUCKING CONDITION
 ###########################################################################################
 
+
 def create_bridge(start, map, n_row, n_col, direction, length):
 
     copy = map
 
     start_row = start.row if (direction == TOP or direction == DOWN) else start.col
-    end_row = MAP_START_INDEX if (direction == TOP or direction == LEFT) else n_row if direction == DOWN else n_col
+    end_row = (
+        MAP_START_INDEX
+        if (direction == TOP or direction == LEFT)
+        else n_row
+        if direction == DOWN
+        else n_col
+    )
     step = 1 if (direction == DOWN or direction == RIGHT) else -1
 
     for i in range(start_row, end_row, step):
         row = start.row if not (direction == TOP or direction == DOWN) else i
         col = start.col if (direction == TOP or direction == DOWN) else i
 
-        if (row == start.row and col == start.col): continue
+        if row == start.row and col == start.col:
+            continue
 
         cell = copy[row][col]
 
-        if (cell > 0 and cell <= 12): break
-        copy[row][col] = max(cell, 12 + length * 2 - (0 if (direction == TOP or direction == DOWN) else 1))
-    
-    return copy
-        
+        if cell > 0 and cell <= 12:
+            break
+        copy[row][col] = max(
+            cell,
+            12 + length * 2 - (0 if (direction == TOP or direction == DOWN) else 1),
+        )
 
+    return copy
 
 
 def print_matrix(map):
     for row in range(n_row):
         for col in range(n_col):
-            print(MATRIX_CODE[map[row][col]],end="")
+            print(MATRIX_CODE[map[row][col]], end="")
         print()
+
 
 def main():
     islands = initialise_islands(n_row, n_col)
