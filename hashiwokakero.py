@@ -117,6 +117,10 @@ def initialise_islands(n_row, n_col):
     return islands
 
 
+###########################################################################################
+# ANOTHER FUCKING DRAFT FUNCTION DO NOT JUDGE, THERE'S SO MANY DUPLICATED PIECES OF CODE
+###########################################################################################
+
 def simplify(map, n_row, n_col, islands):
     copy = map
     for island in islands:
