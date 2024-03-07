@@ -115,25 +115,38 @@ def initialise_islands(n_row, n_col):
 def simplify(map, n_row, n_col, islands):
     copy = map
     for island in islands:
-        if island.domain <= 3 and island.get_adjacent_count(copy) == 1:
+        if island.domain < 3 and island.get_adjacent_count(copy) == 1:
+
             direction = 0
             for connections in island.get_adjacent_paths(copy):
                 if (connections != None):
-                    copy = create_bridge(island.cell, copy, n_row, n_col, direction)
+                    copy = create_bridge(island.cell, copy, n_row, n_col, direction, island.domain)
                 direction += 1
+
         elif (
             island.domain % 3 == 0 and island.get_adjacent_count(copy) == island.domain / 3
         ):
-            continue
+            direction = 0
+            for connections in island.get_adjacent_paths(copy):
+                if (connections != None):
+                    copy = create_bridge(island.cell, copy, n_row, n_col, direction, 3)
+                direction += 1
+
         elif island.get_adjacent_count(copy) == int(island.domain / 3 + 1):
-            continue
+            
+            direction = 0
+            for connections in island.get_adjacent_paths(copy):
+                if (connections != None):
+                    copy = create_bridge(island.cell, copy, n_row, n_col, direction, 1)
+                direction += 1
     return copy
 
 ###########################################################################################
-# DRAFT FUNCTION PLEASE DON'T JUDGE
+# DRAFT FUNCTION PLEASE DON'T JUDGE THIS IS LITERALLY THE FUCKING WORST CODE
+# I DIDN'T WANT TO DO FOUR FUCKING FOR LOOPS SO I MADE A REALLY LONG FUCKING CONDITION
 ###########################################################################################
 
-def create_bridge(start, map, n_row, n_col, direction):
+def create_bridge(start, map, n_row, n_col, direction, length):
 
     copy = map
 
@@ -144,10 +157,12 @@ def create_bridge(start, map, n_row, n_col, direction):
     for i in range(start_row, end_row, step):
         row = start.row if not (direction == TOP or direction == DOWN) else i
         col = start.col if (direction == TOP or direction == DOWN) else i
+
         if (row == start.row and col == start.col): continue
         cell = copy[row][col]
+
         if (cell > 0): break
-        copy[row][col] = 18
+        copy[row][col] = max(cell, 12 + length * 2 - (0 if (direction == TOP or direction == DOWN) else 1))
     
     return copy
         
