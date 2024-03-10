@@ -1,5 +1,33 @@
 import numpy
+import sys
 import time
+
+###############################################################################
+
+def scan_map():
+    text = []
+    for line in sys.stdin:
+        row = []
+        for ch in line:
+            n = ord(ch)
+            if n >= 48 and n <= 57:    # between '0' and '9'
+                row.append(n - 48)
+            elif n >= 97 and n <= 122: # between 'a' and 'z'
+                row.append(n - 87)
+            elif ch == '.':
+                row.append(0)
+        text.append(row)
+
+    nrow = len(text)
+    ncol = len(text[0])
+
+    map = numpy.zeros((nrow,ncol),dtype=numpy.int32)
+    for r in range(nrow):
+        for c in range(ncol):
+            map[r,c] = text[r][c]
+    
+    return nrow, ncol, map
+
 
 ###############################################################################
 
@@ -7,9 +35,9 @@ import time
 # execution. These variables will be provided from said function as a return
 # statement.
 
-n_row = 10
-n_col = 10
-matrix = numpy.array(
+n_row_test = 10
+n_col_test = 10
+matrix_test = numpy.array(
     [
         [0, 4, 0, 9, 0, 0, 8, 0, 0, 6],
         [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -104,12 +132,9 @@ class Island:
             col = self.cell.col if is_vertical_direction else i
             cell = map.map[row][col]
 
-            # When it encounters an empty cell or a valid
-            # adjacent path, add result to the path array.
-            if (
-                cell > MAXIMUM_DOMAIN
-                and cell % 2 == (0 if is_vertical_direction else 1)
-            ) or cell == EMPTY_CELL:
+            # When it encounters an empty cell or any bridge,
+            # append potential path to array to avoid conflicts.
+            if cell > MAXIMUM_DOMAIN or cell == EMPTY_CELL:
                 path.append(Cell(row, col))
 
             # Stops when another island has been encounterd.
@@ -332,16 +357,20 @@ def print_map(map: Map) -> None:
 
 
 def main():
+    n_row, n_col, matrix = scan_map()
     map = Map(n_row, n_col, matrix)
+
+    # Helper code to estimate runtime of solution.!
+    start_time = time.time()
+
     simplified, completed_nodes = simplify(map)  # O(n^3)
     print_map(simplified)  # O(n^2)
+    
+    print("\033[92mRUNTIME: %ss \033[0m" % (time.time() - start_time))
 
     # for island in completed_nodes:
         # print(str(island.cell.row) + ", " + str(island.cell.col))
 
 
 if __name__ == "__main__":
-    # Helper code to estimate runtime of solution.
-    start_time = time.time()
     main()
-    print("\033[92mRUNTIME: %ss \033[0m" % (time.time() - start_time))
