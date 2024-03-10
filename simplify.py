@@ -29,7 +29,7 @@ matrix = numpy.array(
 EMPTY_CELL = 0
 DIRECTION_COUNT = 4
 
-MATRIX_CODE = '.123456789abc-|=\"E#'
+MATRIX_CODE = '.123456789abc-|="E#'
 MINIMUM_DOMAIN = 1
 MAXIMUM_DOMAIN = 12
 MAP_START_INDEX = -1
@@ -79,11 +79,13 @@ class Island:
             col = self.cell.col if is_vertical_direction else i
             cell = map.map[row][col]
 
-            # TODO - REFACTOR THIS IF STATEMENT
-            if cell == EMPTY_CELL or (cell > MAXIMUM_DOMAIN and cell % 2 == (0 if is_vertical_direction else 1)):
+            if (
+                cell > MAXIMUM_DOMAIN
+                and cell % 2 == (0 if is_vertical_direction else 1)
+            ) or cell == EMPTY_CELL:
                 path.append(Cell(row, col))
 
-            if cell > MINIMUM_DOMAIN and cell < MAXIMUM_DOMAIN:
+            if cell >= MINIMUM_DOMAIN and cell <= MAXIMUM_DOMAIN:
                 if len(path) == 0:
                     return None
                 return path
@@ -102,6 +104,7 @@ class Island:
     def get_adjacent_count(self, map: Map) -> int:
         return DIRECTION_COUNT - self.get_adjacent_paths(map).count(None)
 
+
 # O(n^2)
 def get_islands(map: Map) -> list[Island]:
     islands = []
@@ -112,33 +115,35 @@ def get_islands(map: Map) -> list[Island]:
             islands.append(Island(Cell(row, col), map.map[row][col]))
     return islands
 
+
 # O(n^3)
 def simplify(map: Map, islands: list[Island]) -> Map:
 
     copy = map
 
-    for island in islands: # O(n^3)
+    for island in islands:  # O(n^3)
         adjacency_count = island.get_adjacent_count(copy)
 
         paths = island.get_adjacent_paths(copy)
         direction = 0
 
         if island.domain < 3 and adjacency_count == 1:
-            for path in paths: # O(4)
+            for path in paths:  # O(4)
                 if path != None:
-                    copy = create_bridge(copy, path, direction, island.domain) # O(n)
+                    copy = create_bridge(copy, path, direction, island.domain)  # O(n)
                 direction += 1
         elif island.domain % 3 == 0 and adjacency_count == island.domain / 3:
-            for path in paths: # O(4)
+            for path in paths:  # O(4)
                 if path != None:
-                    copy = create_bridge(copy, path, direction, 3) # O(n)
+                    copy = create_bridge(copy, path, direction, 3)  # O(n)
                 direction += 1
         elif adjacency_count == int(island.domain / 3 + 1):
-            for path in paths: # O(4)
+            for path in paths:  # O(4)
                 if path != None:
-                    copy = create_bridge(copy, path, direction, 1) # O(n)
+                    copy = create_bridge(copy, path, direction, 1)  # O(n)
                 direction += 1
     return copy
+
 
 # O(n)
 def create_bridge(map: Map, path: list[Cell], direction: int, length: int) -> Map:
@@ -148,9 +153,15 @@ def create_bridge(map: Map, path: list[Cell], direction: int, length: int) -> Ma
         copy[cell.row][cell.col] = max(domain, get_bridge(direction, length))
     return Map(map.n_col, map.n_row, copy)
 
+
 # O(1)
 def get_bridge(direction: int, length: int) -> int:
-    return MAXIMUM_DOMAIN + length * 2 - (0 if (direction == TOP or direction == DOWN) else 1)
+    return (
+        MAXIMUM_DOMAIN
+        + length * 2
+        - (0 if (direction == TOP or direction == DOWN) else 1)
+    )
+
 
 # O(n^2)
 def print_matrix(map: Map) -> None:
@@ -162,9 +173,10 @@ def print_matrix(map: Map) -> None:
 
 def main():
     map = Map(n_row, n_col, matrix)
-    islands = get_islands(map) # O(n^2)
-    simplified = simplify(map, islands) # O(n^3)
-    print_matrix(simplified) # O(n^2)
+    islands = get_islands(map)  # O(n^2)
+    simplified = simplify(map, islands)  # O(n^3)
+    print_matrix(simplified)  # O(n^2)
+
 
 if __name__ == "__main__":
     start_time = time.time()
