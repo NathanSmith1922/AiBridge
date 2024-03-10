@@ -1,4 +1,5 @@
 import numpy
+import time
 
 # CONSTANTS
 MATRIX_CODE = '.123456789abc-|="E#'
@@ -148,9 +149,11 @@ def simplify(map, n_row, n_col, islands):
         elif island.get_adjacent_count(copy) == int(island.domain / 3 + 1):
 
             direction = 0
-            for connections in island.get_adjacent_paths(copy):
+            for connections in island.get_adjacent_paths(copy):  # O(4)
                 if connections != None:
-                    copy = create_bridge(island.cell, copy, n_row, n_col, direction, 1)
+                    copy = create_bridge(
+                        island.cell, copy, n_row, n_col, direction, 1
+                    )  # O(n)
                 direction += 1
     return copy
 
@@ -188,7 +191,9 @@ def create_bridge(start, map, n_row, n_col, direction, length):
             break
         copy[row][col] = max(
             cell,
-            MAXIMUM_DOMAIN + length * 2 - (0 if (direction == TOP or direction == DOWN) else 1),
+            MAXIMUM_DOMAIN
+            + length * 2
+            - (0 if (direction == TOP or direction == DOWN) else 1),
         )
 
     return copy
@@ -207,4 +212,6 @@ def main():
 
 
 if __name__ == "__main__":
+    start_time = time.time()
     main()
+    print("\033[92mRUNTIME: %ss \033[0m" % (time.time() - start_time))
