@@ -121,6 +121,7 @@ def initialise_islands(n_row, n_col):
 # ANOTHER FUCKING DRAFT FUNCTION DO NOT JUDGE, THERE'S SO MANY DUPLICATED PIECES OF CODE
 ###########################################################################################
 
+
 def simplify(map, n_row, n_col, islands):
     copy = map
     for island in islands:
@@ -187,7 +188,7 @@ def create_bridge(start, map, n_row, n_col, direction, length):
             break
         copy[row][col] = max(
             cell,
-            12 + length * 2 - (0 if (direction == TOP or direction == DOWN) else 1),
+            MAXIMUM_DOMAIN + length * 2 - (0 if (direction == TOP or direction == DOWN) else 1),
         )
 
     return copy
