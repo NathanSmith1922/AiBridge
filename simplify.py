@@ -1,4 +1,5 @@
 import numpy
+import time
 
 ###############################################################################
 
@@ -166,4 +167,6 @@ def main():
     print_matrix(simplified) # O(n^2)
 
 if __name__ == "__main__":
+    start_time = time.time()
     main()
+    print("\033[92mRUNTIME: %ss \033[0m" % (time.time() - start_time))
