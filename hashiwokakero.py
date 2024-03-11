@@ -9,27 +9,27 @@ rowSize = 5
 colSize = 5
 
 def getMatrix():
-    # return (numpy.array(
-    #         [
-    #             [0, 4, 0, 9, 0, 0, 8, 0, 0, 6],
-    #             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    #             [0, 5, 0, 9, 0, 0, 9, 0, 4, 0],
-    #             [0, 0, 0, 0, 0, 2, 0, 0, 0, 0],
-    #             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    #             [0, 5, 0, 8, 0, 5, 0, 0, 1, 0],
-    #             [0, 0, 3, 0, 0, 0, 7, 0, 0, 7],
-    #             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    #             [0, 1, 0, 0, 0, 1, 0, 0, 0, 4],
-    #             [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
-    #         ]
-    #     ))
+#     return (numpy.array(
+#             [
+#                 [0, 4, 0, 9, 0, 0, 8, 0, 0, 6],
+#                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#                 [0, 5, 0, 9, 0, 0, 9, 0, 4, 0],
+#                 [0, 0, 0, 0, 0, 2, 0, 0, 0, 0],
+#                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#                 [0, 5, 0, 8, 0, 5, 0, 0, 1, 0],
+#                 [0, 0, 3, 0, 0, 0, 7, 0, 0, 7],
+#                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#                 [0, 1, 0, 0, 0, 1, 0, 0, 0, 4],
+#                 [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+#             ]
+#         ))
     return (numpy.array(
             [
-                [2, 0, 0, 0, 2],
+                [1, 0, 2, 0, 3],
                 [0, 0, 0, 0, 0],
-                [0, 3, 0, 3, 0],
-                [0, 0, 0, 0, 0],
-                [2, 0, 0, 0, 2],
+                [3, 0, 2, 0, 0],
+                [0, 2, 0, 0, 4],
+                [2, 0, 0, 1, 0],
             ]
         ))
 
@@ -56,7 +56,7 @@ class Island:
         return Coordinate(None, None)
 
     def down(self, matrix):
-        for i in range(self.coordinate.row, rowSize):
+        for i in range(self.coordinate.row + 1, rowSize):
             node = matrix[i][self.coordinate.col]
             if node == -1:
                 return Coordinate(None, None)
@@ -119,10 +119,12 @@ def findUnvisited(newMatrix):
     return unvisited
 
 def DFS(matrix, visited, unvisited, curr, prev, numBridges):
+    # print(curr.coordinate.row, curr.coordinate.col)
     if (checkIfSolution(matrix)):
         print_matrix(matrix)
-        print("Solution Found")
+        print("==================== Solution Found ====================")
         return
+
     if (len(unvisited) == 0):
         return
     
@@ -158,6 +160,17 @@ def DFS(matrix, visited, unvisited, curr, prev, numBridges):
             for i in range(start + 1, end):
                 newMatrix[i][curr.coordinate.col] = -1
         # print_matrix(newMatrix)
+
+    if (prev != None):
+        print("prev = ", prev.coordinate.row, prev.coordinate.col, "adj prev:", "left:", prev.left(newMatrix).row, "right:", prev.right(newMatrix).row, "up:", prev.top(newMatrix).row, "down", prev.down(newMatrix).row)
+        print_matrix(newMatrix)
+        if (newMatrix[prev.coordinate.row][prev.coordinate.col] > 0):
+            if (prev.left(newMatrix).row == None and
+                prev.right(newMatrix).row == None and
+                prev.top(newMatrix).row == None and
+                prev.down(newMatrix).row == None):
+                    print("HI")
+                    return
 
 
 
@@ -212,7 +225,7 @@ def DFS(matrix, visited, unvisited, curr, prev, numBridges):
         curr.top(newMatrix).row == None and
         curr.down(newMatrix).row == None and
         len(newUnvisited) != 0):
-        DFS(newMatrix, newVisited, newUnvisited, newUnvisited.pop(0), None, 0)
+        DFS(newMatrix, newVisited, newUnvisited, newUnvisited.pop(0), curr, 0)
 
     
 
