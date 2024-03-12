@@ -265,13 +265,14 @@ def get_islands(map: Map) -> list[Island]:
     return islands
 
 
-def simplify(map: Map) -> tuple[Map, bool]:
+def simplify(map: Map) -> Map:
+    
     """
     Given a provided Hashi map, create guaranteed bridges
     as according to the layout of the islands and existing
     bridges.
 
-    This function runs in O(n^3) time.
+    This function runs in O(n^4)? time. Included while loop.
 
     Parameters:
         map (Map): Map class representing the grid.
@@ -279,44 +280,46 @@ def simplify(map: Map) -> tuple[Map, bool]:
     Returns:
         Map: Simplified map class with guaranteed bridges applied.
     """
-    original = Map(map.n_row, map.n_col, np.copy(map.matrix))
-    # Iterate through all the islands, determine what build steps need to be
-    # executed, and queue them into a list to be run after scanning.
-    steps = []
+    requires_restart = True
+    while requires_restart:
+        original = Map(map.n_row, map.n_col, np.copy(map.matrix))
+        # Iterate through all the islands, determine what build steps need to be
+        # executed, and queue them into a list to be run after scanning.
+        steps = []
 
-    for island in get_islands(map):  # O(n^2)
-        domain = island.get_restricted_domain(map)
-        paths = island.get_adjacent_paths(map)
-        adjacency_count = 4 - paths.count(None)
-        direction = 0
+        for island in get_islands(map):  # O(n^2)
+            domain = island.get_restricted_domain(map)
+            paths = island.get_adjacent_paths(map)
+            adjacency_count = 4 - paths.count(None)
+            direction = 0
 
-        # Single island connections case.
-        if domain < 3 and adjacency_count == 1:
-            for path in paths:
-                if path != None:
-                    steps.append(Path(path, direction, domain))
-                direction += 1
+            # Single island connections case.
+            if domain < 3 and adjacency_count == 1:
+                for path in paths:
+                    if path != None:
+                        steps.append(Path(path, direction, domain))
+                    direction += 1
 
-        # Complete islands with maximum connections case.
-        elif domain % 3 == 0 and adjacency_count == domain / 3:
-            for path in paths:
-                if path != None:
-                    steps.append(Path(path, direction, 3))
-                direction += 1
+            # Complete islands with maximum connections case.
+            elif domain % 3 == 0 and adjacency_count == domain / 3:
+                for path in paths:
+                    if path != None:
+                        steps.append(Path(path, direction, 3))
+                    direction += 1
 
-        # Guaranteed partial connections case.
-        elif domain % 3 != 0 and adjacency_count == int(domain / 3 + 1):
-            for path in paths:
-                if path != None:
-                    steps.append(Path(path, direction, 1))
-                direction += 1
+            # Guaranteed partial connections case.
+            elif domain % 3 != 0 and adjacency_count == int(domain / 3 + 1):
+                for path in paths:
+                    if path != None:
+                        steps.append(Path(path, direction, 1))
+                    direction += 1
 
-    
-    # After scanning each island and their configurations apply the changes.
-    for path in steps:  # O(n^3)
-        map = create_bridge(map, path.path, path.direction, path.size)
-    
-    return map, not np.array_equal(original.matrix, map.matrix)
+        
+        # After scanning each island and their configurations apply the changes.
+        for path in steps:  # O(n^3)
+            map = create_bridge(map, path.path, path.direction, path.size)
+        requires_restart = not np.array_equal(original.matrix, map.matrix)
+    return map
 
 
 def create_bridge(map: Map, path: list[Cell], direction: int, length: int) -> Map:
@@ -385,13 +388,23 @@ def main():
 
     # Helper code to estimate runtime of solution.
     start_time = time.time()
-    result, requires_restart = simplify(map)
-    while requires_restart:
-        result, requires_restart = simplify(result)
+    result = simplify(map)
     print_map(result)
-
     print("\033[92mRUNTIME: %ss \033[0m" % (time.time() - start_time))
 
 
 if __name__ == "__main__":
     main()
+
+"""
+5..5..5...
+.5..6...1.
+..........
+5.2.b.6.2.
+..........
+.4..8..6.4
+..........
+5...9..8.6
+..........
+.1..6..6.4
+"""
