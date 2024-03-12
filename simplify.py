@@ -27,6 +27,7 @@ def scan_map():
         for c in range(ncol):
             map[r, c] = text[r][c]
 
+
     return nrow, ncol, map
 
 
@@ -254,7 +255,6 @@ def get_islands(map: Map) -> list[Island]:
     Returns:
         list[Island]: List of all islands on the grid.
     """
-
     islands = []
     for row in range(map.n_row):
         for col in range(map.n_col):
@@ -341,7 +341,7 @@ def create_bridge(map: Map, path: list[Cell], direction: int, length: int) -> Ma
     for cell in path:
         domain = copy[cell.row][cell.col]
         copy[cell.row][cell.col] = max(domain, get_bridge(direction, length))
-    return Map(map.n_col, map.n_row, copy)
+    return Map(map.n_row, map.n_col, copy)
 
 
 def get_bridge(direction: int, length: int) -> int:
@@ -375,7 +375,7 @@ def print_map(map: Map) -> None:
     Parameters:
         map (Map): Map class representing the grid.
     """
-
+    
     for row in range(map.n_row):
         for col in range(map.n_row):
             print(MATRIX_CODE[map.matrix[row][col]], end="")
@@ -407,4 +407,17 @@ if __name__ == "__main__":
 5...9..8.6
 ..........
 .1..6..6.4
+"""
+
+"""
+.1...6...7....4.4.2.
+..4.2..2...3.8...6.2
+.....2..............
+5.c.7..a.a..5.6..8.5
+.............2......
+...5...9.a..8.b.8.4.
+4.5................3
+....2..4..1.5...2...
+.2.7.4...7.2..5...3.
+............4..3.1.2
 """
