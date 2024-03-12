@@ -377,7 +377,7 @@ def print_map(map: Map) -> None:
     """
     
     for row in range(map.n_row):
-        for col in range(map.n_row):
+        for col in range(map.n_col):
             print(MATRIX_CODE[map.matrix[row][col]], end="")
         print()
 
