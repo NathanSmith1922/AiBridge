@@ -381,6 +381,17 @@ def print_map(map: Map) -> None:
             print(MATRIX_CODE[map.matrix[row][col]], end="")
         print()
 
+def check_goal(map: Map) -> bool:
+    count = 0
+    islands = get_islands(map)
+    for island in islands:
+        if island.get_restricted_domain(map) == 0: 
+            count += 1
+    if count != len(islands):
+        print("\033[91mProblem not solved yet. " + str(count) + " / " + str(len(islands)) + " solved.\033[0m")
+        return False
+    print("\033[92mProblem solved!\033[0m")
+    return True
 
 def main():
     n_row, n_col, matrix = scan_map()
@@ -390,6 +401,7 @@ def main():
     start_time = time.time()
     result = simplify(map)
     print_map(result)
+    check_goal(result)
     print("\033[92mRUNTIME: %ss \033[0m" % (time.time() - start_time))
 
 
