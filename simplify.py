@@ -155,7 +155,8 @@ class Island(Cell):
                     == domain
                 ):
                     return None
-
+                # Adds the destination cell to the path.
+                path.append(Cell(row, col))
                 return path
         # Returns nothing once it's hit the edges of the grid.
         return None
@@ -266,7 +267,6 @@ def get_islands(map: Map) -> list[Island]:
 
 
 def simplify(map: Map) -> Map:
-    
     """
     Given a provided Hashi map, create guaranteed bridges
     as according to the layout of the islands and existing
@@ -340,6 +340,7 @@ def create_bridge(map: Map, path: list[Cell], direction: int, length: int) -> Ma
     copy = map.matrix
     for cell in path:
         domain = copy[cell.row][cell.col]
+        if domain >= MINIMUM_DOMAIN and domain <= MAXIMUM_DOMAIN: continue
         copy[cell.row][cell.col] = max(domain, get_bridge(direction, length))
     return Map(map.n_row, map.n_col, copy)
 
@@ -388,7 +389,7 @@ def check_goal(map: Map) -> bool:
         if island.get_restricted_domain(map) == 0: 
             count += 1
     if count != len(islands):
-        print("\033[91mProblem not solved yet. " + str(count) + " / " + str(len(islands)) + " solved.\033[0m")
+        print("\033[92mProblem not solved yet. " + str(count) + " / " + str(len(islands)) + " solved.\033[0m")
         return False
     print("\033[92mProblem solved!\033[0m")
     return True
