@@ -394,6 +394,39 @@ def check_goal(map: Map) -> bool:
     print("\033[92mProblem solved!\033[0m")
     return True
 
+def clear_array(map: Map):
+    map = []
+
+def setup_DFS(map: Map):
+    visited = []
+    unvisited = get_islands(map)
+    DFS(map, visited, unvisited, unvisited[0], None, 0)
+
+
+def DFS(map: Map, visited: list[Island], unvisited: list[Island], curr_island, prev_island, num_bridges):
+    if (check_goal(map)):
+        print_map(map)
+        exit()
+
+    if (len(unvisited) == 0):
+        clear_array(map)
+
+
+    new_map = map
+    new_map.matrix = map.matrix.copy()
+    new_unvisited = unvisited.copy()
+    new_visited = visited.copy()
+    new_unvisited.append(curr_island)
+
+    # Remove curr_island from unvisited
+    for i in range(0, len(new_unvisited) - 1):
+        if (new_unvisited[i].row == curr_island.row and new_unvisited[i].col == curr_island.col):
+            new_unvisited.pop(i)
+
+    print(prev_island, num_bridges)
+
+
+
 def main():
     n_row, n_col, matrix = scan_map()
     map = Map(n_row, n_col, matrix)
@@ -404,6 +437,8 @@ def main():
     print_map(result)
     check_goal(result)
     print("\033[92mRUNTIME: %ss \033[0m" % (time.time() - start_time))
+
+    setup_DFS(result)
 
 
 if __name__ == "__main__":
