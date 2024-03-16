@@ -57,7 +57,6 @@ class Map:
 		self.n_col = n_col
 		self.matrix = matrix
 
-
 ####################################################################################################
 
 
@@ -129,7 +128,7 @@ class Island(Cell):
 			is_bridge_vertical = domain % 2 == 0
 
 			# Self-completed case
-			if sum(self.get_adjacent_bridge_connections(map)) == self.domain:
+			if sum(self.get_adjacent_bridge_connections(map, [])) == self.domain:
 				return None
 
 			# If the path contains a parallel bridge or an empty cell. Add to potentential path.
@@ -151,7 +150,7 @@ class Island(Cell):
 				# If the destination cell has full connections, then
 				# this path shouldn't be considered in calculations.
 				if (
-					sum(Island(row, col, domain).get_adjacent_bridge_connections(map))
+					sum(Island(row, col, domain).get_adjacent_bridge_connections(map, []))
 					== domain
 				):
 					return None
@@ -178,7 +177,7 @@ class Island(Cell):
 			self.__navigate_direction(map, RIGHT),
 		]
 
-	def get_adjacent_bridge_connections(self, map: Map) -> list[int]:
+	def get_adjacent_bridge_connections(self, map: Map, ignore_direction: list[int]) -> list[int]:
 		"""
 		This function runs in O(1) time.
 
@@ -195,10 +194,10 @@ class Island(Cell):
 		down = map.matrix[min(self.row + 1, map.n_row - 1)][self.col]
 
 		return [
-			get_bridge_size(top) if top % 2 == 0 else 0,
-			get_bridge_size(down) if down % 2 == 0 else 0,
-			get_bridge_size(left) if left % 2 == 1 else 0,
-			get_bridge_size(right) if right % 2 == 1 else 0,
+			0 if TOP in ignore_direction else get_bridge_size(top) if top % 2 == 0 else 0,
+			0 if DOWN in ignore_direction else get_bridge_size(down) if down % 2 == 0 else 0,
+			0 if LEFT in ignore_direction else get_bridge_size(left) if left % 2 == 1 else 0,
+			0 if RIGHT in ignore_direction else get_bridge_size(right) if right % 2 == 1 else 0,
 		]
 
 	def get_restricted_domain(self, map: Map) -> int:
@@ -214,7 +213,7 @@ class Island(Cell):
 		"""
 
 		paths = self.get_adjacent_paths(map)
-		bridge_connections = self.get_adjacent_bridge_connections(map)
+		bridge_connections = self.get_adjacent_bridge_connections(map, [])
 		restricted_domain = self.domain
 
 		for i in range(4):
@@ -391,158 +390,79 @@ def print_map(map: Map) -> None:
 		print()
 
 def check_goal(map: Map) -> bool:
+	"""
+	"""
+
 	count = 0
 	islands = get_islands(map)
 	for island in islands:
 		if island.get_restricted_domain(map) == 0: 
 			count += 1
 	if count != len(islands):
-		# print("\033[92mProblem not solved yet. " + str(count) + " / " + str(len(islands)) + " solved.\033[0m")
 		return False
-	print("\033[92mProblem solved!\033[0m")
+	print("\033[92mProblem solved!\033[0m")	
 	print_map(map)
 	return True
 
-def get_direction(map: Map, curr: Island, prev: Island) -> int:
-	if (curr.row == prev.row):
-		if (curr.col > prev.col):
-			return RIGHT
-		return LEFT
-	if (curr.row > prev.row):
-		return DOWN
-	return TOP
+####################################################################################################
 
-def check_if_move_repeat(move_matrix, row, col, direction, num_bridges):
-	if (move_matrix[row][col] == []):
-		return False
-	if ([direction, num_bridges] in move_matrix[row][col]):
-		return True
-	return False
-
-def get_curr_domain(map: Map, island: Island) -> int:
-	connections = island.get_adjacent_bridge_connections(map)
-	total = 0
-	for i in range(4):
-		total += connections[i]
-	return island.domain - total
-
-def DFS_iterative(map: Map):
-	# Setup no repeat moves
-	matrix_stack = []
-	matrix_stack.append(map.matrix.copy())
-	curr_map = map
-
-	unvisited_stack = []
-	unvisited_stack.append(get_islands(map))
-	print(len(unvisited_stack))
-
-	curr_island_stack = []
-	curr_island_stack.append(unvisited_stack[0][0])
+def DFS(map: Map):
 	
-	direction_stack = []
-	direction_stack.append(5)
+	visited = set()
+	stack = [Map(map.n_row, map.n_col, map.matrix.copy())]
 
-	depth = 0
-	while not check_goal(curr_map):
-		depth += 1
-		# print("Iteration", depth)
-		curr_matrix = matrix_stack.pop()
-		prev_direction = direction_stack.pop()
-		curr_island = curr_island_stack.pop()
-		unvisited = unvisited_stack.pop()
+	while len(stack) > 0:
+		current_map = stack.pop()
 
-
-		if (len(unvisited) == 0):
-			continue
-
-		if (len(unvisited) == 1):
-			if (unvisited[0].row == curr_island.row and unvisited[0].col == curr_island.col):
-				unvisited.pop()
-		else:
-			for i in range(0, len(unvisited) - 1):
-				if (unvisited[i].row == curr_island.row and unvisited[i].col == curr_island.col):
-					unvisited.pop(i)
+		if check_goal(current_map):
+			return map
 		
-		if (len(unvisited) == 0):
-			continue
-		curr_map = Map(map.n_row, map.n_col, curr_matrix)
+		# Mark current state as visited
+		hashable = tuple(tuple(row) for row in current_map.matrix)
+		visited.add(hash(hashable))
+		
+		# Iterate and find any islands that have incomplete paths.
+		for current_island in get_islands(current_map):
+			# Ignores islands that have been otherwise completed.
+			if current_island.get_restricted_domain(current_map) == 0: continue
+			# Checks and finds the incomplete paths of this island.
+			direction = 0
+			for path in current_island.get_adjacent_paths(current_map):
+				# Once it discoveres a path it can connect to, commit that choice to a new map and add to the stack.
+				if path is not None:
+					next_island = Island(path[-1].row, path[-1].col, map.matrix[path[-1].row][path[-1].col])
 
-		# Actual DFS
-		paths = curr_island.get_adjacent_paths(curr_map)
-		for i in range(len(paths)):
-			if (paths[i] == None):
-				continue
-			# How many bridges to place
-			path = paths[i]
-			next_island = Island(path[-1].row, path[-1].col, curr_matrix[path[-1].row][path[-1].col])
+					# Out of the two selected islands, what is the maximum bridge size that can be placed between them?
+					maximum_bridge_size_attemptable = min(
+						current_island.domain - sum(current_island.get_adjacent_bridge_connections(map, [direction])),
+						next_island.domain - sum(next_island.get_adjacent_bridge_connections(map, [direction])),
+						3
+					)
+					
+					for i in range(maximum_bridge_size_attemptable, -1, -1):						
+						temp = Map(map.n_row, map.n_col, current_map.matrix.copy())
 
-			# Deals with additive bridge creation
-			bridges_to_place = min(get_curr_domain(curr_map, curr_island), get_curr_domain(curr_map, next_island), 3)
-			num_bridges = 1
-			if (curr_matrix[path[0].row][path[0].col] > 0):
-				match curr_matrix[path[0].row][path[0].col]:
-					case 13 | 14:
-						num_bridges += 1
-						bridges_to_place += 1
-					case 15 | 16:
-						num_bridges += 2
-						bridges_to_place += 2
-					case 17 | 18:
-						num_bridges += 3
-						bridges_to_place += 3
-			num_bridges = min(num_bridges, 3)
-			bridges_to_place = min(bridges_to_place, 3)
+						new_map = create_bridge(temp, path, direction, i)
 
-			# Creates Bridges
-			direction = get_direction(curr_map, curr_island, next_island)
-			# Stops basic looping
-			if (direction == TOP and prev_direction == DOWN):
-				continue
-			elif (direction == DOWN and prev_direction == TOP):
-				continue
-			elif (direction == LEFT and prev_direction == RIGHT):
-				continue
-			elif (direction == RIGHT and prev_direction == LEFT):
-				continue
+						# Checks for cycles. i.e already picked routes.
+						hashable = tuple(tuple(row) for row in new_map.matrix)
+						if hash(hashable) in visited:
+							continue  # Skip visited states to prevent loops
 
-			# Stop Iterating on maxed bridge
-			if (curr_matrix[path[0].row][path[0].col] > 16):
-				continue
-			while num_bridges <= bridges_to_place:
-				temp_matrix = curr_matrix.copy()
-				new_map = Map(map.n_row, map.n_col, temp_matrix)
-				create_bridge(
-					new_map, 
-					path, 
-					direction,
-					num_bridges)
-				direction_stack.append(direction)
-
-				# Updates Stacks
-				matrix_stack.append(temp_matrix)                
-				curr_island_stack.append(next_island)
-				unvisited_stack.append(unvisited.copy())
-
-				num_bridges += 1
-
-		# Floaters
-		if (paths[0] == None and paths[1] == None and paths[2] == None and paths[3] == None and len(unvisited) != 0):
-			temp_matrix = curr_matrix.copy()
-			matrix_stack.append(temp_matrix)
-			curr_island_stack.append(unvisited[0])
-			unvisited_stack.append(unvisited.copy())
-			direction_stack.append(5)
-
-		curr_matrix = None
+						stack.append(new_map)
+				direction += 1
+	print("\033[91mCOULDN'T FIND SOLUTION (CHECK CODE)\033[0m")	
+	return
+		
 def main():
+	sys.setrecursionlimit(100)
 	n_row, n_col, matrix = scan_map()
 	map = Map(n_row, n_col, matrix)
 
 	# Helper code to estimate runtime of solution.
 	start_time = time.time()
 	result = simplify(map)
-	print_map(result)
-	DFS_iterative(result)
+	DFS(result)
 	print("\033[92mRUNTIME: %ss \033[0m" % (time.time() - start_time))
 
 
