@@ -411,7 +411,7 @@ def DFS(map: Map):
 	visited = set()
 	stack = [Map(map.n_row, map.n_col, map.matrix.copy())]
 
-	while len(stack) > 0:
+	while len(stack) > 0: # O(n^4)
 		current_map = stack.pop()
 
 		if check_goal(current_map):
@@ -427,7 +427,7 @@ def DFS(map: Map):
 			if current_island.get_restricted_domain(current_map) == 0: continue
 			# Checks and finds the incomplete paths of this island.
 			direction = 0
-			for path in current_island.get_adjacent_paths(current_map):
+			for path in current_island.get_adjacent_paths(current_map): # O(1)
 				# Once it discoveres a path it can connect to, commit that choice to a new map and add to the stack.
 				if path is not None:
 					next_island = Island(path[-1].row, path[-1].col, map.matrix[path[-1].row][path[-1].col])
@@ -439,7 +439,9 @@ def DFS(map: Map):
 						3
 					)
 					
-					for i in range(maximum_bridge_size_attemptable, -1, -1):						
+					for i in range(maximum_bridge_size_attemptable, 0, -1): # O(1)
+						if get_bridge_size(current_map.matrix[path[0].row][path[0].col]) == i: continue
+
 						temp = Map(map.n_row, map.n_col, current_map.matrix.copy())
 
 						new_map = create_bridge(temp, path, direction, i)
