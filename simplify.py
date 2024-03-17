@@ -434,6 +434,7 @@ def DFS(map: Map):
 
 					# Out of the two selected islands, what is the maximum bridge size that can be placed between them?
 					maximum_bridge_size_attemptable = min(
+						current_island.domain - sum(current_island.get_adjacent_bridge_connections(current_map, [direction])),
 						next_island.domain - sum(next_island.get_adjacent_bridge_connections(current_map, [direction])),
 						3
 					)
@@ -456,7 +457,6 @@ def DFS(map: Map):
 	return
 		
 def main():
-	sys.setrecursionlimit(100)
 	n_row, n_col, matrix = scan_map()
 	map = Map(n_row, n_col, matrix)
 
