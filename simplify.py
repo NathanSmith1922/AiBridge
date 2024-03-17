@@ -425,24 +425,41 @@ def DFS(map: Map):
 		for current_island in get_islands(current_map):
 			# Ignores islands that have been otherwise completed.
 			if current_island.get_restricted_domain(current_map) == 0: continue
-			# Checks and finds the incomplete paths of this island.
+
 			direction = 0
-			for path in current_island.get_adjacent_paths(current_map): # O(1)
+			curr_domain = current_island.domain - sum(current_island.get_adjacent_bridge_connections(current_map, [4]))
+
+			# Get the sum of domains arround the current island
+			paths = current_island.get_adjacent_paths(current_map)
+			surrounding_domains = 0
+			for path in paths:
+				if path is not None:
+					surrounding_domains += current_map.matrix[path[-1].row][path[-1].col] 
+
+			# Checks and finds the incomplete paths of this island.
+			for path in paths:
 				# Once it discoveres a path it can connect to, commit that choice to a new map and add to the stack.
 				if path is not None:
 					next_island = Island(path[-1].row, path[-1].col, current_map.matrix[path[-1].row][path[-1].col])
 
 					# Out of the two selected islands, what is the maximum bridge size that can be placed between them?
 					maximum_bridge_size_attemptable = min(
-						current_island.domain - sum(current_island.get_adjacent_bridge_connections(current_map, [direction])),
+						curr_domain + get_bridge_size(current_map.matrix[path[0].row][path[0].col]),
 						next_island.domain - sum(next_island.get_adjacent_bridge_connections(current_map, [direction])),
 						3
 					)
 					
-					for i in range(maximum_bridge_size_attemptable, 0, -1): # O(1)
-						if get_bridge_size(current_map.matrix[path[0].row][path[0].col]) == i: continue
+					for i in range(0, maximum_bridge_size_attemptable + 1):
+						# Ignore attempt if islands surronding curr_island cannot then complete curr_island
+						if (
+							(curr_domain + get_bridge_size(current_map.matrix[path[0].row][path[0].col]) - i) > 
+							(surrounding_domains - current_map.matrix[path[-1].row][path[-1].col])
+							):
+							continue
 
-						temp = Map(map.n_row, map.n_col, current_map.matrix.copy())
+						if get_bridge_size(current_map.matrix[path[0].row][path[0].col]) >= i: continue
+
+						temp = Map(current_map.n_row, current_map.n_col, current_map.matrix.copy())
 
 						new_map = create_bridge(temp, path, direction, i)
 
@@ -453,6 +470,9 @@ def DFS(map: Map):
 
 						stack.append(new_map)
 				direction += 1
+		# Helps garbage collector
+		current_map.matrix = None
+		current_map = None
 	print("\033[91mCOULDN'T FIND SOLUTION (CHECK CODE)\033[0m")	
 	return
 		
