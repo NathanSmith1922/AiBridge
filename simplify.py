@@ -221,6 +221,9 @@ class Island(Cell):
 				restricted_domain -= bridge_connections[i]
 
 		return restricted_domain
+	
+	def get_curr_domain(self, map: Map) -> int:
+		return (self.domain - sum(self.get_adjacent_bridge_connections(map, [4])))	
 
 
 ####################################################################################################
@@ -411,7 +414,7 @@ def DFS(map: Map):
 	visited = set()
 	stack = [Map(map.n_row, map.n_col, map.matrix.copy())]
 
-	while len(stack) > 0: # O(n^4)
+	while len(stack) > 0:
 		current_map = stack.pop()
 
 		if check_goal(current_map):
@@ -427,37 +430,54 @@ def DFS(map: Map):
 			if current_island.get_restricted_domain(current_map) == 0: continue
 
 			direction = 0
-			curr_domain = current_island.domain - sum(current_island.get_adjacent_bridge_connections(current_map, [4]))
+			curr_domain = current_island.get_curr_domain(current_map)
 
 			# Get the sum of domains arround the current island
 			paths = current_island.get_adjacent_paths(current_map)
 			surrounding_domains = 0
 			for path in paths:
 				if path is not None:
-					surrounding_domains += current_map.matrix[path[-1].row][path[-1].col] 
+					temp_island = Island(path[-1].row, path[-1].col, current_map.matrix[path[-1].row][path[-1].col])
+					surrounding_domains += temp_island.get_curr_domain(current_map)
 
 			# Checks and finds the incomplete paths of this island.
 			for path in paths:
 				# Once it discoveres a path it can connect to, commit that choice to a new map and add to the stack.
 				if path is not None:
 					next_island = Island(path[-1].row, path[-1].col, current_map.matrix[path[-1].row][path[-1].col])
+					next_domain = next_island.get_curr_domain(current_map)
+
+					# Get the sum of domains arround the next island
+					next_surrounding_domains = 0
+					for next_path in next_island.get_adjacent_paths(current_map):
+						if next_path is not None:
+							temp_island = Island(next_path[-1].row, next_path[-1].col, current_map.matrix[next_path[-1].row][next_path[-1].col])
+							next_surrounding_domains += temp_island.get_curr_domain(current_map)
 
 					# Out of the two selected islands, what is the maximum bridge size that can be placed between them?
 					maximum_bridge_size_attemptable = min(
 						curr_domain + get_bridge_size(current_map.matrix[path[0].row][path[0].col]),
-						next_island.domain - sum(next_island.get_adjacent_bridge_connections(current_map, [direction])),
+						next_domain + get_bridge_size(current_map.matrix[path[0].row][path[0].col]),
 						3
 					)
 					
 					for i in range(0, maximum_bridge_size_attemptable + 1):
-						# Ignore attempt if islands surronding curr_island cannot then complete curr_island
+						if get_bridge_size(current_map.matrix[path[0].row][path[0].col]) >= i: continue
+
+						# Arc Consistency:
+						# Ignore attempt if islands surronding curr_island cannot complete curr_island after new bridge
 						if (
-							(curr_domain + get_bridge_size(current_map.matrix[path[0].row][path[0].col]) - i) > 
-							(surrounding_domains - current_map.matrix[path[-1].row][path[-1].col])
+							(curr_domain + get_bridge_size(current_map.matrix[path[0].row][path[0].col]) - i) >
+							(surrounding_domains - next_domain)
+							):
+							continue
+						# Ignore attempt if islands surronding next_island cannot complete next_island after new bridge
+						if (
+							(next_domain + get_bridge_size(current_map.matrix[path[0].row][path[0].col]) - i) > 
+							(next_surrounding_domains - curr_domain)
 							):
 							continue
 
-						if get_bridge_size(current_map.matrix[path[0].row][path[0].col]) >= i: continue
 
 						temp = Map(current_map.n_row, current_map.n_col, current_map.matrix.copy())
 
