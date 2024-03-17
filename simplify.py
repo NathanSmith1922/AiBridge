@@ -1,6 +1,34 @@
+#!/usr/bin/python3
+
+"""
+We have created three main classes, called Map, Cell and Island to represent the entire Hashi problem.
+The idea before applying any search techniques was to restrict and simplify the problem as much as we
+can to cut off combinations of the puzzle. The simplify algorithm in turn, places guaranteed bridges
+based on an islands domain, and number of adjacent islands, returning the new map after completion.
+
+The function simplify() follows three conditions:
+	- Single connection bridges -> Islands with 1 adjacency with the domains 1 - 3.
+	- Fully connected islands -> Islands with a domain multiple of 3 with adjacencies matching 'domain / 3'
+	- Guaranteed partial connections -> Islands with domains not a multiple of 3 with adjacencies matching 'int(domain / 3 + 1)'.
+	  Integer cast is used here because we need to round this number down.
+	  
+	  Example -> 4 node with 2 adjacencies has a guaranteed single connection on the 2 adjacent sides.
+
+Simplify will continue to loop until no more guaranteed connections can be made.
+
+Afterwards, Our backtracking algorithm to attempt the hashi problem is a modified DFS.
+At each iteration, it completes one move and then appends all next possible moves to a stack.
+We add all potential moves to ensure that islands that are not connecting to our starting 
+island will still be solved. When checking if a move is valid, the dfs uses arc consistency 
+by checking if the islands surrounding the current and next islands have bridge capacities 
+such that they can solve the current and next islands after the current move (i.e. an island 
+with 2 required bridges and only 1 adjacent island should never make a bridge connection not 
+equal to 2). Additionally, we have implemented a set containing hashed versions of previous 
+map states to ensure that a map state already proven to fail is not repeated.
+"""
+
 import numpy as np
 import sys
-import time
 
 ###############################################################################
 
@@ -221,6 +249,18 @@ class Island(Cell):
 				restricted_domain -= bridge_connections[i]
 
 		return restricted_domain
+	
+	def get_curr_domain(self, map: Map) -> int:
+		"""
+		This functions runs in O(1) time
+
+		Parameters:
+			map (Map): Map class representing the grid.
+
+		Returns:
+			int: The domain of the island after subtracting all surrounding bridges.	
+		"""
+		return (self.domain - sum(self.get_adjacent_bridge_connections(map, [4])))	
 
 
 ####################################################################################################
@@ -377,22 +417,11 @@ def print_map(map: Map) -> None:
 	"""
 	
 	for row in range(map.n_row):
-		for col in range(map.n_col):
-			if (map.matrix[row][col] > 0 and map.matrix[row][col] < 13):
-				new_island = Island(row, col, map.matrix[row][col])
-				if (new_island.get_restricted_domain(map) == 0):
-					print('\033[92m' + MATRIX_CODE[map.matrix[row][col]] + '\033[0m', end="")
-				else:
-					print('\033[31m' + MATRIX_CODE[map.matrix[row][col]] + '\033[0m', end="")
-
-			else:    
-				print(MATRIX_CODE[map.matrix[row][col]], end="")
+		for col in range(map.n_col): 
+			print(MATRIX_CODE[map.matrix[row][col]], end="")
 		print()
 
 def check_goal(map: Map) -> bool:
-	"""
-	"""
-
 	count = 0
 	islands = get_islands(map)
 	for island in islands:
@@ -400,18 +429,16 @@ def check_goal(map: Map) -> bool:
 			count += 1
 	if count != len(islands):
 		return False
-	print("\033[92mProblem solved!\033[0m")	
 	print_map(map)
 	return True
 
-####################################################################################################
 
 def DFS(map: Map):
 	
 	visited = set()
 	stack = [Map(map.n_row, map.n_col, map.matrix.copy())]
 
-	while len(stack) > 0: # O(n^4)
+	while len(stack) > 0:
 		current_map = stack.pop()
 
 		if check_goal(current_map):
@@ -425,24 +452,58 @@ def DFS(map: Map):
 		for current_island in get_islands(current_map):
 			# Ignores islands that have been otherwise completed.
 			if current_island.get_restricted_domain(current_map) == 0: continue
-			# Checks and finds the incomplete paths of this island.
+
 			direction = 0
-			for path in current_island.get_adjacent_paths(current_map): # O(1)
+			curr_domain = current_island.get_curr_domain(current_map)
+
+			# Get the sum of domains arround the current island
+			paths = current_island.get_adjacent_paths(current_map)
+			surrounding_domains = 0
+			for path in paths:
+				if path is not None:
+					temp_island = Island(path[-1].row, path[-1].col, current_map.matrix[path[-1].row][path[-1].col])
+					surrounding_domains += temp_island.get_curr_domain(current_map)
+
+			# Checks and finds the incomplete paths of this island.
+			for path in paths:
 				# Once it discoveres a path it can connect to, commit that choice to a new map and add to the stack.
 				if path is not None:
 					next_island = Island(path[-1].row, path[-1].col, current_map.matrix[path[-1].row][path[-1].col])
+					next_domain = next_island.get_curr_domain(current_map)
+
+					# Get the sum of domains arround the next island
+					next_surrounding_domains = 0
+					for next_path in next_island.get_adjacent_paths(current_map):
+						if next_path is not None:
+							temp_island = Island(next_path[-1].row, next_path[-1].col, current_map.matrix[next_path[-1].row][next_path[-1].col])
+							next_surrounding_domains += temp_island.get_curr_domain(current_map)
 
 					# Out of the two selected islands, what is the maximum bridge size that can be placed between them?
 					maximum_bridge_size_attemptable = min(
-						current_island.domain - sum(current_island.get_adjacent_bridge_connections(current_map, [direction])),
-						next_island.domain - sum(next_island.get_adjacent_bridge_connections(current_map, [direction])),
+						curr_domain + get_bridge_size(current_map.matrix[path[0].row][path[0].col]),
+						next_domain + get_bridge_size(current_map.matrix[path[0].row][path[0].col]),
 						3
 					)
 					
-					for i in range(maximum_bridge_size_attemptable, 0, -1): # O(1)
-						if get_bridge_size(current_map.matrix[path[0].row][path[0].col]) == i: continue
+					for i in range(0, maximum_bridge_size_attemptable + 1):
+						if get_bridge_size(current_map.matrix[path[0].row][path[0].col]) >= i: continue
 
-						temp = Map(map.n_row, map.n_col, current_map.matrix.copy())
+						# Arc Consistency:
+						# Ignore attempt if islands surronding curr_island cannot complete curr_island after new bridge
+						if (
+							(curr_domain + get_bridge_size(current_map.matrix[path[0].row][path[0].col]) - i) >
+							(surrounding_domains - next_domain)
+							):
+							continue
+						# Ignore attempt if islands surronding next_island cannot complete next_island after new bridge
+						if (
+							(next_domain + get_bridge_size(current_map.matrix[path[0].row][path[0].col]) - i) > 
+							(next_surrounding_domains - curr_domain)
+							):
+							continue
+
+
+						temp = Map(current_map.n_row, current_map.n_col, current_map.matrix.copy())
 
 						new_map = create_bridge(temp, path, direction, i)
 
@@ -453,159 +514,21 @@ def DFS(map: Map):
 
 						stack.append(new_map)
 				direction += 1
+		# Helps garbage collector
+		current_map.matrix = None
+		current_map = None
 	print("\033[91mCOULDN'T FIND SOLUTION (CHECK CODE)\033[0m")	
 	return
+
+####################################################################################################
 		
 def main():
 	n_row, n_col, matrix = scan_map()
 	map = Map(n_row, n_col, matrix)
 
 	# Helper code to estimate runtime of solution.
-	start_time = time.time()
 	result = simplify(map)
 	DFS(result)
-	print("\033[92mRUNTIME: %ss \033[0m" % (time.time() - start_time))
-
-
 
 if __name__ == "__main__":
 	main()
-
-"""
-5..5..5...
-.5..6...1.
-..........
-5.2.b.6.2.
-..........
-.4..8..6.4
-..........
-5...9..8.6
-..........
-.1..6..6.4
-"""
-
-"""
-.1...6...7....4.4.2.
-..4.2..2...3.8...6.2
-.....2..............
-5.c.7..a.a..5.6..8.5
-.............2......
-...5...9.a..8.b.8.4.
-4.5................3
-....2..4..1.5...2...
-.2.7.4...7.2..5...3.
-............4..3.1.2
-"""
-
-"""
-..........
-6.7.6..4.3
-......3...
-..2....2..
-4...8.6..6
-..1.......
-......4.2.
-....3..2.8
-3.6...5.2.
-....3....6
-"""
-
-"""
-.5.3.
-.....
-.7.3.
-.....
-.6.4.
-"""
-
-"""
-6......6
-.4..7.1.
-........
-.2..5..7
-........
-6...5..7
-........
-4...7..5
-"""
-
-"""
-.........
-3..5..9.6
-.........
-.5.7..8..
-3........
-....1.5.5
-.........
-.3.5...3.
-1.1...4.4
-"""
-
-"""
-4.8.6.6.3.
-..........
-7.a.5.a.5.
-..........
-..4.4.7..4
-4..4.3.1..
-......2...
-4.5.6..6.6
-..........
-3.5.7..8.5
-"""
-
-"""
-5.6..7.5.3
-..........
-...3.7.4.2
-4.........
-..1..9..3.
-......1..2
-4..8.9.2..
-......3..4
-4.3..2....
-.3.7..4..1
-"""
-
-"""
-4.1...4.5.5..3.4..7....9.7..7.6.4.7.4...
-....................2.3....3.........2..
-...4..a.8.9..6..5.4....3.....1....3....2
-..1.3......3..9.....8.9..5..1.2.6...4...
-...1....2....................5.3.....5.6
-9.5.6.8...b.8.9.4........3....2.8..2....
-........1....2.......................3.6
-9...9.6.....2..3...7.8.7.5.8.5..8.3.....
-.3.........4.7...5..........3..3.1...3.7
-..3.8.....3..........6.5.4...3..3..7....
-6.....5.6..4...3.6..........2........4.7
-....2........3........3..8.a.7.5...6....
-.5....5..3..1..6.5..........1........4.6
-...........6.9..6..7.7.1.5.5..6.6.2.....
-.4.2..5.4......4...............3.1.5.4.5
-.......1.5.3....3..3.6.3.4..6.7.5.3.....
-.4.5..6...2..8.6.5....5.1.2.............
-...........................1....3..6....
-5.....9..8..8..5.9..9.c..7...........4.6
-........1..3................6..6.3.5....
-.5.6..8...2..3.5.7..6.....5..........3.5
-............5.1.......7.1........7.7....
-....2.7..7.5......2.3..2.8..3........4.5
-.3..........5..4.8...2.....6..8....3....
-3..6..8.4.3.......6.6.b..6..3....3......
-.5...2...3.......2.........3...3...6.7.5
-...3..8.8.9.c..9..b.9.a.9.9.9.9..6..1.2.
-..2.3..2...1...........1................
-...2.3......3........3..4........5.4..3.
-........4..7...8..9.4.1..............3.2
-.8.8.6.7.7...9...3.3.9.9..7........5..1.
-....5.2.......6...8...1.3...............
-...6.3.5...1.7..1.........5.8......a.9.5
-....6....a..3......1...5................
-.9.b..7.3.....6.4.6..2..6.8.b..7...a..4.
-....1..6.8.2.........................3..
-................4.9.5..6.1...2.4.1......
-....3..5.9.7.6.....2.5....4.7.4.3..6.4..
-...2..1.................................
-.6..8....8....7.7.9..5...2..6.7.5..6..6.
-"""
