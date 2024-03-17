@@ -415,7 +415,7 @@ def DFS(map: Map):
 		current_map = stack.pop()
 
 		if check_goal(current_map):
-			return map
+			return current_map
 		
 		# Mark current state as visited
 		hashable = tuple(tuple(row) for row in current_map.matrix)
@@ -430,12 +430,12 @@ def DFS(map: Map):
 			for path in current_island.get_adjacent_paths(current_map): # O(1)
 				# Once it discoveres a path it can connect to, commit that choice to a new map and add to the stack.
 				if path is not None:
-					next_island = Island(path[-1].row, path[-1].col, map.matrix[path[-1].row][path[-1].col])
+					next_island = Island(path[-1].row, path[-1].col, current_map.matrix[path[-1].row][path[-1].col])
 
 					# Out of the two selected islands, what is the maximum bridge size that can be placed between them?
 					maximum_bridge_size_attemptable = min(
-						current_island.domain - sum(current_island.get_adjacent_bridge_connections(map, [direction])),
-						next_island.domain - sum(next_island.get_adjacent_bridge_connections(map, [direction])),
+						current_island.domain - sum(current_island.get_adjacent_bridge_connections(current_map, [direction])),
+						next_island.domain - sum(next_island.get_adjacent_bridge_connections(current_map, [direction])),
 						3
 					)
 					
@@ -457,7 +457,6 @@ def DFS(map: Map):
 	return
 		
 def main():
-	sys.setrecursionlimit(100)
 	n_row, n_col, matrix = scan_map()
 	map = Map(n_row, n_col, matrix)
 
