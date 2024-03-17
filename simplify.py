@@ -223,6 +223,15 @@ class Island(Cell):
 		return restricted_domain
 	
 	def get_curr_domain(self, map: Map) -> int:
+		"""
+		This functions runs in O(1) time
+
+		Parameters:
+			map (Map): Map class representing the grid.
+
+		Returns:
+			int: The domain of the island after subtracting all surrounding bridges.	
+		"""
 		return (self.domain - sum(self.get_adjacent_bridge_connections(map, [4])))	
 
 
