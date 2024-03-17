@@ -1,6 +1,34 @@
+#!/usr/bin/python3
+
+"""
+We have created three main classes, called Map, Cell and Island to represent the entire Hashi problem.
+The idea before applying any search techniques was to restrict and simplify the problem as much as we
+can to cut off combinations of the puzzle. The simplify algorithm in turn, places guaranteed bridges
+based on an islands domain, and number of adjacent islands, returning the new map after completion.
+
+The function simplify() follows three conditions:
+	- Single connection bridges -> Islands with 1 adjacency with the domains 1 - 3.
+	- Fully connected islands -> Islands with a domain multiple of 3 with adjacencies matching 'domain / 3'
+	- Guaranteed partial connections -> Islands with domains not a multiple of 3 with adjacencies matching 'int(domain / 3 + 1)'.
+	  Integer cast is used here because we need to round this number down.
+	  
+	  Example -> 4 node with 2 adjacencies has a guaranteed single connection on the 2 adjacent sides.
+
+Simplify will continue to loop until no more guaranteed connections can be made.
+
+Afterwards, Our backtracking algorithm to attempt the hashi problem is a modified DFS.
+At each iteration, it completes one move and then appends all next possible moves to a stack.
+We add all potential moves to ensure that islands that are not connecting to our starting 
+island will still be solved. When checking if a move is valid, the dfs uses arc consistency 
+by checking if the islands surrounding the current and next islands have bridge capacities 
+such that they can solve the current and next islands after the current move (i.e. an island 
+with 2 required bridges and only 1 adjacent island should never make a bridge connection not 
+equal to 2). Additionally, we have implemented a set containing hashed versions of previous 
+map states to ensure that a map state already proven to fail is not repeated.
+"""
+
 import numpy as np
 import sys
-import time
 
 ###############################################################################
 
@@ -389,22 +417,11 @@ def print_map(map: Map) -> None:
 	"""
 	
 	for row in range(map.n_row):
-		for col in range(map.n_col):
-			if (map.matrix[row][col] > 0 and map.matrix[row][col] < 13):
-				new_island = Island(row, col, map.matrix[row][col])
-				if (new_island.get_restricted_domain(map) == 0):
-					print('\033[92m' + MATRIX_CODE[map.matrix[row][col]] + '\033[0m', end="")
-				else:
-					print('\033[31m' + MATRIX_CODE[map.matrix[row][col]] + '\033[0m', end="")
-
-			else:    
-				print(MATRIX_CODE[map.matrix[row][col]], end="")
+		for col in range(map.n_col): 
+			print(MATRIX_CODE[map.matrix[row][col]], end="")
 		print()
 
 def check_goal(map: Map) -> bool:
-	"""
-	"""
-
 	count = 0
 	islands = get_islands(map)
 	for island in islands:
@@ -412,11 +429,9 @@ def check_goal(map: Map) -> bool:
 			count += 1
 	if count != len(islands):
 		return False
-	print("\033[92mProblem solved!\033[0m")	
 	print_map(map)
 	return True
 
-####################################################################################################
 
 def DFS(map: Map):
 	
@@ -504,157 +519,16 @@ def DFS(map: Map):
 		current_map = None
 	print("\033[91mCOULDN'T FIND SOLUTION (CHECK CODE)\033[0m")	
 	return
+
+####################################################################################################
 		
 def main():
 	n_row, n_col, matrix = scan_map()
 	map = Map(n_row, n_col, matrix)
 
 	# Helper code to estimate runtime of solution.
-	start_time = time.time()
 	result = simplify(map)
 	DFS(result)
-	print("\033[92mRUNTIME: %ss \033[0m" % (time.time() - start_time))
-
-
 
 if __name__ == "__main__":
 	main()
-
-"""
-5..5..5...
-.5..6...1.
-..........
-5.2.b.6.2.
-..........
-.4..8..6.4
-..........
-5...9..8.6
-..........
-.1..6..6.4
-"""
-
-"""
-.1...6...7....4.4.2.
-..4.2..2...3.8...6.2
-.....2..............
-5.c.7..a.a..5.6..8.5
-.............2......
-...5...9.a..8.b.8.4.
-4.5................3
-....2..4..1.5...2...
-.2.7.4...7.2..5...3.
-............4..3.1.2
-"""
-
-"""
-..........
-6.7.6..4.3
-......3...
-..2....2..
-4...8.6..6
-..1.......
-......4.2.
-....3..2.8
-3.6...5.2.
-....3....6
-"""
-
-"""
-.5.3.
-.....
-.7.3.
-.....
-.6.4.
-"""
-
-"""
-6......6
-.4..7.1.
-........
-.2..5..7
-........
-6...5..7
-........
-4...7..5
-"""
-
-"""
-.........
-3..5..9.6
-.........
-.5.7..8..
-3........
-....1.5.5
-.........
-.3.5...3.
-1.1...4.4
-"""
-
-"""
-4.8.6.6.3.
-..........
-7.a.5.a.5.
-..........
-..4.4.7..4
-4..4.3.1..
-......2...
-4.5.6..6.6
-..........
-3.5.7..8.5
-"""
-
-"""
-5.6..7.5.3
-..........
-...3.7.4.2
-4.........
-..1..9..3.
-......1..2
-4..8.9.2..
-......3..4
-4.3..2....
-.3.7..4..1
-"""
-
-"""
-4.1...4.5.5..3.4..7....9.7..7.6.4.7.4...
-....................2.3....3.........2..
-...4..a.8.9..6..5.4....3.....1....3....2
-..1.3......3..9.....8.9..5..1.2.6...4...
-...1....2....................5.3.....5.6
-9.5.6.8...b.8.9.4........3....2.8..2....
-........1....2.......................3.6
-9...9.6.....2..3...7.8.7.5.8.5..8.3.....
-.3.........4.7...5..........3..3.1...3.7
-..3.8.....3..........6.5.4...3..3..7....
-6.....5.6..4...3.6..........2........4.7
-....2........3........3..8.a.7.5...6....
-.5....5..3..1..6.5..........1........4.6
-...........6.9..6..7.7.1.5.5..6.6.2.....
-.4.2..5.4......4...............3.1.5.4.5
-.......1.5.3....3..3.6.3.4..6.7.5.3.....
-.4.5..6...2..8.6.5....5.1.2.............
-...........................1....3..6....
-5.....9..8..8..5.9..9.c..7...........4.6
-........1..3................6..6.3.5....
-.5.6..8...2..3.5.7..6.....5..........3.5
-............5.1.......7.1........7.7....
-....2.7..7.5......2.3..2.8..3........4.5
-.3..........5..4.8...2.....6..8....3....
-3..6..8.4.3.......6.6.b..6..3....3......
-.5...2...3.......2.........3...3...6.7.5
-...3..8.8.9.c..9..b.9.a.9.9.9.9..6..1.2.
-..2.3..2...1...........1................
-...2.3......3........3..4........5.4..3.
-........4..7...8..9.4.1..............3.2
-.8.8.6.7.7...9...3.3.9.9..7........5..1.
-....5.2.......6...8...1.3...............
-...6.3.5...1.7..1.........5.8......a.9.5
-....6....a..3......1...5................
-.9.b..7.3.....6.4.6..2..6.8.b..7...a..4.
-....1..6.8.2.........................3..
-................4.9.5..6.1...2.4.1......
-....3..5.9.7.6.....2.5....4.7.4.3..6.4..
-...2..1.................................
-.6..8....8....7.7.9..5...2..6.7.5..6..6.
-"""
